@@ -89,31 +89,51 @@ const getGameScore = (game, isNBA = false) => {
 
 const filterGames = (games) => games.filter((game) => game.competitions[0].status.type.state === 'in');
 
+const Nav = ({ children }) => (
+  <nav className="flex items-center justify-between flex-wrap py-4 px-6 text-sm font-medium">
+    <span className={"font-semibold text-xl tracking-tight"}>Scurf</span>
+    <ul className="flex space-x-3">
+      {children}
+    </ul>
+  </nav>
+);
+
+const NavItem = ({ isActive, children }) => (
+  <li>
+      <a
+        className={`block px-3 py-2 rounded-md ${isActive ? 'bg-sky-500 text-white' : 'bg-slate-50'}`}
+      >
+        {children}
+      </a>
+    </li>
+);
+
+const GameList = ({ children }) => (
+  <div className="divide-y divide-slate-100">{children}</div>
+);
+
 const GameCard = ({ game, totalScore, debugInfo }) => {
   const comp = game.competitions[0];
   const team1 = comp.competitors[0];
   const team2 = comp.competitors[1];
 
   return (
-    <div className="p-4 bg-white shadow rounded mb-4">
+    <div className="p-4 bg-white shadow-sm rounded-lg mb-4">
       <h2 className="text-lg font-semibold">
-        {game.name} - Watchability Score: {totalScore}
+        {game.name} - Watchability Score: <span className="text-blue-600">{totalScore}</span>
       </h2>
-      <p className="text-sm">
-        Records: {team2.team.records?.find((record) => record.name === 'overall')?.summary || 'N/A'} vs{' '}
-        {team1.team.records?.find((record) => record.name === 'overall')?.summary || 'N/A'}, Scores: {team2.score} vs{' '}
-        {team1.score}
+      <p className="text-sm text-gray-600">
+        <strong>Records:</strong> {team2.team.records?.find((record) => record.name === 'overall')?.summary || 'N/A'} vs{' '}
+        {team1.team.records?.find((record) => record.name === 'overall')?.summary || 'N/A'}
       </p>
-      <p className="text-sm">
-        Time Remaining: {comp.status.type.detail}, Start Date: {formatStartDate(comp.startDate)}
+      <p className="text-sm text-gray-600">
+        <strong>Scores:</strong> {team2.score} vs {team1.score}
       </p>
-      <div className="text-xs mt-2 text-gray-600">
-        <strong>Debug Info:</strong>
-        <div>Rank Upset Score: {debugInfo.rankUpsetScore}</div>
-        <div>Clock Score: {debugInfo.clockScore}</div>
-        <div>Player Performance Score: {debugInfo.playerPerfScore}</div>
-        <div>Scoring Performance Score: {debugInfo.scoringPerfScore}</div>
-        <div>Close Game Score: {debugInfo.closeGameScore}</div>
+      <p className="text-sm text-gray-600">
+        <strong>Time Remaining:</strong> {comp.status.type.detail}, <strong>Start Date:</strong> {formatStartDate(comp.startDate)}
+      </p>
+      <div className="text-xs mt-2 text-gray-500">
+        <strong>Debug Info:</strong> {JSON.stringify(debugInfo)}
       </div>
     </div>
   );
@@ -135,39 +155,44 @@ export default function Home() {
           const liveData = await fetchGames('mens-college-basketball');
           gamesData = Array.isArray(liveData.events) ? liveData.events : [];
         }
-  
+
         const filteredGames = filterGames(gamesData);
         setCollegeGames(filteredGames);
       } catch (error) {
         console.error('Error fetching games:', error);
-        setCollegeGames([]); // Handle errors gracefully
+        setCollegeGames([]);
       }
     };
-  
+
     loadGames();
   }, [useMockData]);
-  
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <label className="block mb-4">
+    <div className="max-w-4xl mx-auto p-6">
+      <Nav>
+        <NavItem isActive={true}>
+          College Basketball
+        </NavItem>
+        <NavItem isActive={false}>NBA</NavItem>
+      </Nav>
+      <GameList>
+        {collegeGames.map((game) => {
+          const { totalScore, debugInfo } = getGameScore(game);
+          return <GameCard key={game.id} game={game} totalScore={totalScore} debugInfo={debugInfo} />;
+        })}
+      </GameList>
+      {collegeGames.length === 0 && <footer>
+        <h2 className="text-lg font-semibold">No live games.</h2>
+        <label className="flex items-center">
           <input
             type="checkbox"
-            className="mr-2"
+            className="mr-2 rounded border-gray-300"
             checked={useMockData}
             onChange={(e) => setUseMockData(e.target.checked)}
           />
-          Use Mock Data
+          <span className="text-sm text-gray-600">Use Mock Data</span>
         </label>
-        <h1 className="text-2xl font-bold mb-6">Scurfing</h1>
-        <div>
-          {collegeGames.map((game) => {
-            const { totalScore, debugInfo } = getGameScore(game);
-            return <GameCard key={game.id} game={game} totalScore={totalScore} debugInfo={debugInfo} />;
-          })}
-        </div>
-      </main>
+      </footer>}
     </div>
   );
 }
