@@ -2,23 +2,44 @@
 
 // import Image from "next/image";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, FC } from 'react';
 
 const POWER_CONFERENCES = ['2', '4', '8', '23'];
 
 const fetchGames = async (sport = 'mens-college-basketball') => {
   const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/${sport}/scoreboard`;
   const response = await fetch(url);
-  return await response.json();
+  return response.json();
 };
 
-const formatStartDate = (startDateStr) => {
-  const utcTime = new Date(startDateStr);
-  const pacificTime = new Date(utcTime - 8 * 60 * 60 * 1000); // UTC-8 for PST
-  return pacificTime.toLocaleString();
+const formatStartDate = (startDateStr: string): string => {
+  const date = new Date(startDateStr);
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: "America/Los_Angeles", // Pacific Time zone
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    weekday: "long",
 };
 
-const getGameScore = (game, isNBA = false) => {
+return new Intl.DateTimeFormat("en-US", options).format(date);
+};
+
+interface Game {
+  id: string;
+  name: string;
+  competitions: {
+    competitors: any[];
+    status: any;
+    startDate: string;
+    [key: string]: any;
+  }[];
+  [key: string]: any;
+}
+const getGameScore = (game: Game, isNBA = false) => {
   let rankUpsetScore = 0;
   let clockScore = 0;
   let playerPerfScore = 0;
@@ -50,9 +71,9 @@ const getGameScore = (game, isNBA = false) => {
       const conf1 = team1.team.conferenceId || -1;
       const conf2 = team2.team.conferenceId || -1;
       if (POWER_CONFERENCES.includes(conf1) || POWER_CONFERENCES.includes(conf2)) {
-          rankUpsetScore = 5;
+        rankUpsetScore = 5;
       } else {
-          rankUpsetScore = 3;
+        rankUpsetScore = 3;
       }
     }
     else rankUpsetScore = 1;
@@ -65,7 +86,7 @@ const getGameScore = (game, isNBA = false) => {
       if (team.leaders) acc.push(...team.leaders);
       return acc;
     }, []);
-    leaders.forEach((leader) => {
+    leaders.forEach((leader: { name: string; leaders: any[]; }) => {
       if (leader.name !== 'rating') {
         leader.leaders.forEach((player) => {
           if (parseFloat(player.value) > 25) playerPerfScore += 1;
@@ -87,9 +108,9 @@ const getGameScore = (game, isNBA = false) => {
   return { totalScore, debugInfo: { rankUpsetScore, clockScore, playerPerfScore, scoringPerfScore, closeGameScore } };
 };
 
-const filterGames = (games) => games.filter((game) => game.competitions[0].status.type.state === 'in');
+const filterGames = (games: Game) => games.filter((game: Game) => game.competitions[0].status.type.state === 'in');
 
-const Nav = ({ children }) => (
+const Nav: FC<({ children: React.ReactNode })> = ({ children }) => (
   <nav className="flex items-center justify-between flex-wrap py-4 px-6 text-sm font-medium">
     <span className={"font-semibold text-xl tracking-tight"}>Scurf</span>
     <ul className="flex space-x-3">
@@ -98,21 +119,21 @@ const Nav = ({ children }) => (
   </nav>
 );
 
-const NavItem = ({ isActive, children }) => (
+const NavItem: FC<{ isActive: boolean; children: React.ReactNode }> = ({ isActive, children }) => (
   <li>
-      <a
-        className={`block px-3 py-2 rounded-md ${isActive ? 'bg-sky-500 text-white' : 'bg-slate-50'}`}
-      >
-        {children}
-      </a>
-    </li>
+    <a
+      className={`block px-3 py-2 rounded-md ${isActive ? 'bg-sky-500 text-white' : 'bg-slate-50'}`}
+    >
+      {children}
+    </a>
+  </li>
 );
 
-const GameList = ({ children }) => (
+const GameList: FC<({children: React.ReactNode})> = ({ children }) => (
   <div className="divide-y divide-slate-100">{children}</div>
 );
 
-const GameCard = ({ game, totalScore, debugInfo }) => {
+const GameCard: FC<{ game: Game; totalScore: number; debugInfo: any }> = ({ game, totalScore, debugInfo }) => {
   const comp = game.competitions[0];
   const team1 = comp.competitors[0];
   const team2 = comp.competitors[1];
@@ -123,8 +144,8 @@ const GameCard = ({ game, totalScore, debugInfo }) => {
         {game.name} - Watchability Score: <span className="text-blue-600">{totalScore}</span>
       </h2>
       <p className="text-sm text-gray-600">
-        <strong>Records:</strong> {team2.team.records?.find((record) => record.name === 'overall')?.summary || 'N/A'} vs{' '}
-        {team1.team.records?.find((record) => record.name === 'overall')?.summary || 'N/A'}
+        <strong>Records:</strong> {team2.team.records?.find((record: { name: string; }) => record.name === 'overall')?.summary || 'N/A'} vs{' '}
+        {team1.team.records?.find((record: { name: string; }) => record.name === 'overall')?.summary || 'N/A'}
       </p>
       <p className="text-sm text-gray-600">
         <strong>Scores:</strong> {team2.score} vs {team1.score}
@@ -141,7 +162,7 @@ const GameCard = ({ game, totalScore, debugInfo }) => {
 
 export default function Home() {
   const [useMockData, setUseMockData] = useState(false);
-  const [collegeGames, setCollegeGames] = useState([]);
+  const [collegeGames, setCollegeGames] = useState<Game[]>([]);
 
   useEffect(() => {
     const loadGames = async () => {
