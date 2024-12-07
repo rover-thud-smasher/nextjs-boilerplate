@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Scurf",
+  title: "Scurfer - Live Game Tiering",
   description: "Scurfing so you don't have to",
 };
 

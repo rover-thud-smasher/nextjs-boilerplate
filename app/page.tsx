@@ -3,13 +3,20 @@
 // import Image from "next/image";
 
 import React, { useEffect, useState, FC } from 'react';
+import type { Welcome, Event, CompetitorLeader } from './types';
 
 const POWER_CONFERENCES = ['2', '4', '8', '23'];
 
-const fetchGames = async (sport = 'mens-college-basketball') => {
+const fetchGames = async (sport = 'mens-college-basketball'): Promise<Welcome> => {
   const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/${sport}/scoreboard`;
   const response = await fetch(url);
-  return response.json();
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch games: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data as Welcome; // Cast the JSON response to the `Welcome` interface
 };
 
 const formatStartDate = (startDateStr: string): string => {
@@ -23,23 +30,12 @@ const formatStartDate = (startDateStr: string): string => {
     minute: "2-digit",
     second: "2-digit",
     weekday: "long",
+  };
+
+  return new Intl.DateTimeFormat("en-US", options).format(date);
 };
 
-return new Intl.DateTimeFormat("en-US", options).format(date);
-};
-
-interface Game {
-  id: string;
-  name: string;
-  competitions: {
-    competitors: any[];
-    status: any;
-    startDate: string;
-    [key: string]: any;
-  }[];
-  [key: string]: any;
-}
-const getGameScore = (game: Game, isNBA = false) => {
+const getGameScore = (game: Event, isNBA = false) => {
   let rankUpsetScore = 0;
   let clockScore = 0;
   let playerPerfScore = 0;
@@ -68,9 +64,9 @@ const getGameScore = (game: Game, isNBA = false) => {
     else if (rank2 === 99 && rank1 !== 99 && score2 > score1) rankUpsetScore = 10;
     else if (rank1 !== 99 && rank2 !== 99) rankUpsetScore = 7
     else if (rank1 === 99 && rank2 === 99) {
-      const conf1 = team1.team.conferenceId || -1;
-      const conf2 = team2.team.conferenceId || -1;
-      if (POWER_CONFERENCES.includes(conf1) || POWER_CONFERENCES.includes(conf2)) {
+      const conf1 = team1.team.conferenceId;
+      const conf2 = team2.team.conferenceId;
+      if (conf1 && POWER_CONFERENCES.includes(conf1) || conf2 && POWER_CONFERENCES.includes(conf2)) {
         rankUpsetScore = 5;
       } else {
         rankUpsetScore = 3;
@@ -82,14 +78,19 @@ const getGameScore = (game: Game, isNBA = false) => {
     else if (period === 2) clockScore = (1200 - clock) * (1 / Math.max(scoreDiff, 1));
     else clockScore = 1000;
 
-    const leaders = [team1, team2].reduce((acc, team) => {
-      if (team.leaders) acc.push(...team.leaders);
+    const leaders = [team1, team2].reduce((acc: CompetitorLeader[], team) => {
+      if (team.leaders) acc.push(...team.leaders); // Spread `team.leaders` into the array
       return acc;
-    }, []);
-    leaders.forEach((leader: { name: string; leaders: any[]; }) => {
-      if (leader.name !== 'rating') {
+    }, [] as CompetitorLeader[]); // Ensure the accumulator is explicitly typed
+
+    let playerPerfScore = 0;
+
+    leaders.forEach((leader) => {
+      if (leader.name !== 'rating') { // Ensure the condition matches your logic
         leader.leaders.forEach((player) => {
-          if (parseFloat(player.value) > 25) playerPerfScore += 1;
+          if (player.value > 25) {
+            playerPerfScore += 1;
+          }
         });
       }
     });
@@ -108,11 +109,11 @@ const getGameScore = (game: Game, isNBA = false) => {
   return { totalScore, debugInfo: { rankUpsetScore, clockScore, playerPerfScore, scoringPerfScore, closeGameScore } };
 };
 
-const filterGames = (games: Game) => games.filter((game: Game) => game.competitions[0].status.type.state === 'in');
+const filterGames = (games: Event[]) => games.filter((game) => game.competitions[0].status.type.state === 'in');
 
 const Nav: FC<({ children: React.ReactNode })> = ({ children }) => (
   <nav className="flex items-center justify-between flex-wrap py-4 px-6 text-sm font-medium">
-    <span className={"font-semibold text-xl tracking-tight"}>Scurf</span>
+    <span className={"font-semibold text-xl tracking-tight"}>Scurfer - Live Game Tiering</span>
     <ul className="flex space-x-3">
       {children}
     </ul>
@@ -129,11 +130,11 @@ const NavItem: FC<{ isActive: boolean; children: React.ReactNode }> = ({ isActiv
   </li>
 );
 
-const GameList: FC<({children: React.ReactNode})> = ({ children }) => (
+const GameList: FC<({ children: React.ReactNode })> = ({ children }) => (
   <div className="divide-y divide-slate-100">{children}</div>
 );
 
-const GameCard: FC<{ game: Game; totalScore: number; debugInfo: any }> = ({ game, totalScore, debugInfo }) => {
+const GameCard: FC<{ game: Event; totalScore: number; debugInfo: any }> = ({ game, totalScore, debugInfo }) => {
   const comp = game.competitions[0];
   const team1 = comp.competitors[0];
   const team2 = comp.competitors[1];
@@ -143,10 +144,6 @@ const GameCard: FC<{ game: Game; totalScore: number; debugInfo: any }> = ({ game
       <h2 className="text-lg font-semibold">
         {game.name} - Watchability Score: <span className="text-blue-600">{totalScore}</span>
       </h2>
-      <p className="text-sm text-gray-600">
-        <strong>Records:</strong> {team2.team.records?.find((record: { name: string; }) => record.name === 'overall')?.summary || 'N/A'} vs{' '}
-        {team1.team.records?.find((record: { name: string; }) => record.name === 'overall')?.summary || 'N/A'}
-      </p>
       <p className="text-sm text-gray-600">
         <strong>Scores:</strong> {team2.score} vs {team1.score}
       </p>
@@ -162,19 +159,20 @@ const GameCard: FC<{ game: Game; totalScore: number; debugInfo: any }> = ({ game
 
 export default function Home() {
   const [useMockData, setUseMockData] = useState(false);
-  const [collegeGames, setCollegeGames] = useState<Game[]>([]);
+  const [collegeGames, setCollegeGames] = useState<Event[]>([]); // Define state to use the `Event` type
 
   useEffect(() => {
     const loadGames = async () => {
       try {
-        let gamesData;
+        let gamesData: Event[] = [];
+
         if (useMockData) {
           const mockData = await fetch('/ncaa-test.json');
-          const mockJson = await mockData.json();
-          gamesData = Array.isArray(mockJson.events) ? mockJson.events : [];
+          const mockJson: Welcome = await mockData.json() as Welcome; // Cast mock data to `Welcome`
+          gamesData = mockJson.events || [];
         } else {
           const liveData = await fetchGames('mens-college-basketball');
-          gamesData = Array.isArray(liveData.events) ? liveData.events : [];
+          gamesData = liveData.events || [];
         }
 
         const filteredGames = filterGames(gamesData);
@@ -202,8 +200,8 @@ export default function Home() {
           return <GameCard key={game.id} game={game} totalScore={totalScore} debugInfo={debugInfo} />;
         })}
       </GameList>
-      {collegeGames.length === 0 && <footer>
-        <h2 className="text-lg font-semibold">No live games.</h2>
+      <footer>
+        {collegeGames.length === 0 && <h2 className="text-lg font-semibold">No live games.</h2>}
         <label className="flex items-center">
           <input
             type="checkbox"
@@ -213,7 +211,7 @@ export default function Home() {
           />
           <span className="text-sm text-gray-600">Use Mock Data</span>
         </label>
-      </footer>}
+      </footer>
     </div>
   );
 }
