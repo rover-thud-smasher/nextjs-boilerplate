@@ -83,8 +83,6 @@ const getGameScore = (game: Event, isNBA = false) => {
       return acc;
     }, [] as CompetitorLeader[]); // Ensure the accumulator is explicitly typed
 
-    let playerPerfScore = 0;
-
     leaders.forEach((leader) => {
       if (leader.name !== 'rating') { // Ensure the condition matches your logic
         leader.leaders.forEach((player) => {
@@ -134,7 +132,15 @@ const GameList: FC<({ children: React.ReactNode })> = ({ children }) => (
   <div className="divide-y divide-slate-100">{children}</div>
 );
 
-const GameCard: FC<{ game: Event; totalScore: number; debugInfo: any }> = ({ game, totalScore, debugInfo }) => {
+interface DebugInfo {
+  rankUpsetScore: number;
+  clockScore: number;
+  playerPerfScore: number;
+  scoringPerfScore: number;
+  closeGameScore: number;
+}
+
+const GameCard: FC<{ game: Event; totalScore: number; debugInfo: DebugInfo }> = ({ game, totalScore, debugInfo }) => {
   const comp = game.competitions[0];
   const team1 = comp.competitors[0];
   const team2 = comp.competitors[1];
