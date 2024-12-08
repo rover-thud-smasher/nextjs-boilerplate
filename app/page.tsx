@@ -1,6 +1,3 @@
-'use client'
-
-import { useEffect, useState } from 'react';
 import type { Welcome, Event } from './types';
 import { filterGames } from './util';
 import { HomeComponent } from './HomeComponent';
@@ -17,34 +14,27 @@ const fetchGames = async (sport = 'mens-college-basketball'): Promise<Welcome> =
   return data as Welcome;
 };
 
-export default function Home() {
-  const [useMockData, setUseMockData] = useState(false);
-  const [collegeGames, setCollegeGames] = useState<Event[]>([]);
+export default async function Home({ searchParams }: { searchParams: { [key: string]: string } }) {
+  const useMockData =
+    (await searchParams).useMockData === 'true';
 
-  useEffect(() => {
-    const loadGames = async () => {
-      try {
-        let gamesData: Event[] = [];
+  let collegeGames: Event[];
+  try {
+    let gamesData: Event[] = [];
 
-        if (useMockData) {
-          const mockData = await fetch('/ncaa-test.json');
-          const mockJson: Welcome = await mockData.json() as Welcome;
-          gamesData = mockJson.events || [];
-        } else {
-          const liveData = await fetchGames('mens-college-basketball');
-          gamesData = liveData.events || [];
-        }
+    if (useMockData) {
+      const { default: mockData } = await import('./ncaa-test.json');
+      const mockJson: Welcome = mockData as Welcome;
+      gamesData = mockJson.events || [];
+    } else {
+      const liveData = await fetchGames('mens-college-basketball');
+      gamesData = liveData.events || [];
+    }
 
-        const filteredGames = filterGames(gamesData);
-        setCollegeGames(filteredGames);
-      } catch (error) {
-        console.error('Error fetching games:', error);
-        setCollegeGames([]);
-      }
-    };
-
-    loadGames();
-  }, [useMockData]);
-
-  return HomeComponent({ collegeGames })
+    collegeGames = filterGames(gamesData);
+  } catch (error) {
+    collegeGames = [];
+    console.error('Error fetching games:', error);
+  }
+  return <HomeComponent collegeGames={collegeGames} />;
 }
