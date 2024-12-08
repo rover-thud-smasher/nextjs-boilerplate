@@ -5,14 +5,10 @@ import type { Event, CompetitorTeam, Competition, Competitor } from './types';
 const formatStartDate = (startDateStr: string): string => {
     const date = new Date(startDateStr);
     const options: Intl.DateTimeFormatOptions = {
-        timeZone: "America/Los_Angeles", // Pacific Time zone
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit",
-        weekday: "long",
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
     };
 
     return new Intl.DateTimeFormat("en-US", options).format(date);
@@ -33,19 +29,19 @@ export const GameCard: FC<{ game: Event; totalScore: number; debugInfo: DebugInf
 
     return (
         <div className="p-4 bg-white shadow-sm rounded-lg mb-4">
-            <h2 className="text-lg font-semibold">
-                {game.shortName} - Watchability Score: <span className="text-blue-600">{totalScore}</span>
-            </h2>
             <div className="flex items-center justify-between">
                 <TeamLogoWithName team={team1.team} />
                 <span className="text-xl font-bold mx-4">vs</span>
                 <TeamLogoWithName team={team2.team} isReversed={true} />
             </div>
             <p className="text-sm text-gray-600 text-center mt-2">
+                <strong>Watchability:</strong>  <span className="text-blue-600">{totalScore}</span>
+            </p>
+            <p className="text-sm text-gray-600 text-center mt-2">
                 <strong>Scores:</strong> {team2.score} - {team1.score}
             </p>
             <p className="text-sm text-gray-600 text-center">
-                <strong>Time Remaining:</strong> {comp.status.type.detail}, <strong>Start Date:</strong> {formatStartDate(comp.startDate)}
+                <strong>Time Remaining:</strong> {comp.status.type.detail}, <strong>Start Time:</strong> {formatStartDate(comp.startDate)}
             </p>
             <div className="text-xs mt-2 text-gray-500 text-center">
                 <strong>Debug Info:</strong> {JSON.stringify(debugInfo)}
