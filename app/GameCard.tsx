@@ -5,9 +5,9 @@ import type { Event, CompetitorTeam, Competition, Competitor } from './types';
 const formatStartDate = (startDateStr: string): string => {
     const date = new Date(startDateStr);
     const options: Intl.DateTimeFormatOptions = {
+        timeZone: "America/Los_Angeles", // Pacific Time zone
         hour: 'numeric',
         minute: '2-digit',
-        second: '2-digit',
         hour12: true
     };
 
@@ -41,7 +41,7 @@ export const GameCard: FC<{ game: Event; totalScore: number; debugInfo: DebugInf
                 <strong>Scores:</strong> {team2.score} - {team1.score}
             </p>
             <p className="text-sm text-gray-600 text-center">
-                <strong>Time Remaining:</strong> {comp.status.type.detail}, <strong>Start Time:</strong> {formatStartDate(comp.startDate)}
+                <strong>Time Remaining:</strong> {comp.status.type.detail}, <strong>Start Time:</strong> {formatStartDate(comp.startDate)} (Pacific)
             </p>
             <div className="text-xs mt-2 text-gray-500 text-center">
                 <strong>Debug Info:</strong> {JSON.stringify(debugInfo)}
@@ -53,7 +53,6 @@ export const GameCard: FC<{ game: Event; totalScore: number; debugInfo: DebugInf
 const TeamLogoWithName: FC<{ team: CompetitorTeam; isReversed?: boolean }> = ({ team, isReversed = false }) => {
     // Fallback logo URL if no logo is provided
     const fallbackLogo = `https://a.espncdn.com/i/teamlogos/default-team-logo-500.png`;
-    console.warn(team.logo);
     const logoUrl = team.logo || fallbackLogo;
 
     return (

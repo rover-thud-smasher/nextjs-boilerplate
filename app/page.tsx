@@ -14,10 +14,14 @@ const fetchGames = async (sport = 'mens-college-basketball'): Promise<Welcome> =
   return data as Welcome;
 };
 
-export default async function Home({ searchParams }: { searchParams: { [key: string]: string } }) {
-  const useMockData =
-    (await searchParams).useMockData === 'true';
+type HomePageSearchParams = {
+  useMockData?: string;
+};
 
+export default async function Home({ searchParams }: { searchParams: HomePageSearchParams }) {
+  const params = await searchParams;
+  const useMockData = params.useMockData === 'true';
+  
   let collegeGames: Event[];
   try {
     let gamesData: Event[] = [];
