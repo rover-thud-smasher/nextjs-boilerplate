@@ -1,4 +1,4 @@
-import type { Welcome, Event, CompetitorLeader } from './types';
+import type { Event, CompetitorLeader } from './types';
 
 const POWER_CONFERENCES = ['2', '4', '8', '23'];
 

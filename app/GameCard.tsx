@@ -1,5 +1,5 @@
-import React, { useEffect, useState, FC } from 'react';
-import type { Welcome, Event, CompetitorLeader } from './types';
+import { FC } from 'react';
+import type { Event } from './types';
 
 const formatStartDate = (startDateStr: string): string => {
     const date = new Date(startDateStr);
