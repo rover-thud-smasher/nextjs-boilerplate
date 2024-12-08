@@ -29,7 +29,7 @@ const NavItem: FC<{
 );
 
 const GameList: FC<({ children: React.ReactNode })> = ({ children }) => (
-  <div className="divide-y divide-slate-100">{children}</div>
+  <div className="space-y-4 divide-slate-100">{children}</div>
 );
 
 export const HomeComponent: FC<({ collegeGames: Event[] })> = ({ collegeGames }) => {
