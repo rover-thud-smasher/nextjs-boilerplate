@@ -2,15 +2,7 @@ import { FC } from 'react';
 import Image from 'next/image';
 import type { Event, CompetitorTeam, Competition, Competitor } from './types';
 
-interface DebugInfo {
-    rankUpsetScore: number;
-    clockScore: number;
-    playerPerfScore: number;
-    scoringPerfScore: number;
-    closeGameScore: number;
-}
-
-export const GameCard: FC<{ game: Event; totalScore: number; debugInfo: DebugInfo }> = ({ game, totalScore, debugInfo }) => {
+export const GameCard: FC<{ game: Event }> = ({ game }) => {
     const comp = game.competitions[0] as Competition;
     const team1 = comp.competitors[0] as Competitor;
     const team2 = comp.competitors[1] as Competitor;

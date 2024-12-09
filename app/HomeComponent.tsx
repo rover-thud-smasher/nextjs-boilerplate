@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { Event } from './types';
 import { GameCard } from './GameCard';
 import { getGameScore } from './util';
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC } from 'react';
 
 const Nav: FC = () => (
   <nav className="flex items-center justify-center flex-wrap mx-auto p-2 ">
@@ -37,7 +37,7 @@ export const HomeComponent: FC<({ collegeGames: Event[] })> = ({ collegeGames })
       <GameList>
         {collegeGames.map((game) => {
           const { totalScore, debugInfo } = getGameScore(game);
-          return <GameCard key={game.id} game={game} totalScore={totalScore} debugInfo={debugInfo} />;
+          return <GameCard key={game.id} game={game} />;
         })}
       </GameList>
       <footer>
